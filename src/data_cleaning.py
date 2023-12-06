@@ -45,7 +45,7 @@ unique_age_data = cleaned_data[
 
 numerical_features = unique_age_data.columns.drop(['player_id'])
 
-scaler = StandardScaler()
+# scaler = StandardScaler()
 
-unique_age_data[numerical_features] = scaler.fit_transform(unique_age_data[numerical_features])
+# unique_age_data[numerical_features] = scaler.fit_transform(unique_age_data[numerical_features])
 unique_age_data.to_csv("data/cleaned_data.csv", index=False)
