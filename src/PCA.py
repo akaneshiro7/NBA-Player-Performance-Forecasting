@@ -28,7 +28,7 @@ columns_to_drop = [
 ]
 
 features = data.drop(columns=columns_to_drop)
-targets = data[['pts_per_game', 'ast_percent', 'orb_per_game', 'drb_per_game']]
+targets = data[['pts_per_game', 'ast_per_game', 'orb_per_game', 'drb_per_game']]
 
 # Standardizing the features
 scaler = StandardScaler()
