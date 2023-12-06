@@ -7,9 +7,27 @@ from sklearn.decomposition import PCA
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense
 
+import matplotlib.pyplot as plt
+import numpy as np
+
 data = pd.read_csv("data/cleaned_data.csv")
 # Separating features and targets
-features = data.drop(['pts_per_game', 'ast_percent', 'orb_per_game', 'drb_per_game'], axis=1)
+columns_to_drop = [
+    "player_id", "g", "mp_per_game", 
+    "fg_per_game", "fga_per_game", "ft_per_game", "fta_per_game",
+    "orb_per_game", "drb_per_game", "ast_per_game", "tov_per_game",
+    "pf_per_game", "pts_per_game", "orb_percent", "drb_percent", 
+    "ast_percent", "tov_percent", "usg_percent", "avg_dist_fga", 
+    "percent_fga_from_x0_3_range", "percent_fga_from_x3_10_range", 
+    "percent_fga_from_x10_16_range", "percent_fga_from_x16_3p_range", 
+    "percent_fga_from_x3p_range", "fg_percent_from_x0_3_range", 
+    "fg_percent_from_x3_10_range", "fg_percent_from_x10_16_range", 
+    "fg_percent_from_x16_3p_range", "fg_percent_from_x3p_range", 
+    "percent_assisted_x2p_fg", "percent_assisted_x3p_fg", 
+    "percent_corner_3s_of_3pa", "corner_3_point_percent"
+]
+
+features = data.drop(columns=columns_to_drop)
 targets = data[['pts_per_game', 'ast_percent', 'orb_per_game', 'drb_per_game']]
 
 # Standardizing the features
@@ -18,7 +36,7 @@ features_scaled = scaler.fit_transform(features)
 
 # Applying PCA
 pca = PCA(n_components=0.95)  # Keeping 95% of the variance
-features_pca = pca.fit_transform(features_scaled)
+features_pca = pca.fit_transform(features)
 
 # Splitting the data into training and testing sets
 X_train, X_test, y_train, y_test = train_test_split(features_pca, targets, test_size=0.2, random_state=42)
@@ -57,46 +75,33 @@ history = model.fit(X_train, y_train, validation_split=0.2, epochs=100, batch_si
 # Evaluating the model on the test set
 test_loss = model.evaluate(X_test, y_test)
 
-print(test_loss)
-# numerical_features = data.columns.drop(['player_id'])
+# Plotting PCA Variance Explained
+plt.figure(figsize=(10, 6))
+plt.bar(range(1, len(pca.explained_variance_ratio_) + 1), pca.explained_variance_ratio_)
+plt.ylabel('Explained Variance')
+plt.xlabel('Principal Components')
+plt.title('PCA Variance Explained')
+plt.show()
 
-# # Applying PCA
-# # Excluding non-numerical columns for PCA
-# pca_features = data[numerical_features]
+# Plotting Training and Validation Loss
+plt.figure(figsize=(10, 6))
+plt.plot(history.history['loss'], label='Training Loss')
+plt.plot(history.history['val_loss'], label='Validation Loss')
+plt.ylabel('Loss')
+plt.xlabel('Epochs')
+plt.title('Training and Validation Loss Over Epochs')
+plt.legend()
+plt.show()
 
-# # Initialize PCA, let's start by keeping 95% of the variance
-# pca = PCA(n_components=0.95)
-# pca_data = pca.fit_transform(pca_features)
 
-# # Checking the number of components selected by PCA
-# n_components = pca.n_components_
-# variance_explained = np.sum(pca.explained_variance_ratio_)
+# Predictions
+predictions = model.predict(X_test)
 
-# print(n_components, variance_explained)
-
-# pdb.set_trace()
-
-# # Data Preparation for Neural Network
-# # Since we need to predict points, rebounds, and assists, let's assume these are the last three columns in our PCA data
-# # Splitting the PCA data into features (X) and targets (y)
-# X = pca_data[:, :-3]
-# y = pca_data[:, -3:]
-
-# # Splitting the data into training and testing sets
-# X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-
-# # Model Architecture
-# model = Sequential()
-# model.add(Dense(64, input_dim=51, activation='relu'))
-# model.add(Dense(32, activation='relu'))
-# model.add(Dense(3))  # 3 outputs for points, rebounds, and assists
-
-# # Compilation
-# model.compile(optimizer=Adam(learning_rate=0.0001), loss='mean_squared_error')
-
-# # Training
-# # Due to computational limitations, we'll use a small number of epochs
-# history = model.fit(X_train, y_train, validation_data=(X_test, y_test), epochs=1000, batch_size=32)
-
-# # The detailed training process and performance evaluation will require more resources and fine-tuning
-# # print(history.history)
+# Plotting Predicted vs Actual for each target
+for i, target in enumerate(targets.columns):
+    plt.figure(figsize=(10, 6))
+    plt.scatter(y_test[target], predictions[:, i], alpha=0.3)
+    plt.xlabel('Actual Values')
+    plt.ylabel('Predictions')
+    plt.title(f'Predicted vs Actual for {target}')
+    plt.show()
